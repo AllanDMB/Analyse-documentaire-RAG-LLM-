@@ -1,3 +1,4 @@
+import torchvision
 import streamlit as st
 
 from rag.loader import get_pdf_hash, load_and_split_pdf_from_bytes
