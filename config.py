@@ -16,7 +16,7 @@ def get_secret(key: str) -> str | None:
 
 # === LLM ===
 GROQ_API_KEY = get_secret("GROQ_API_KEY")
-LLM_MODEL = "llama-3.1-8b-instant"
+LLM_MODEL = "openai/gpt-oss-120b"
 LLM_TEMPERATURE = 0
 
 # === Embeddings ===

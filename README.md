@@ -10,7 +10,7 @@ J'ai commencé ce projet pour comprendre en pratique comment fonctionne un pipel
 1. Le PDF est lu page par page, puis découpé en morceaux d'environ 500 caractères (avec 50 caractères de chevauchement).
 2. Chaque morceau est transformé en vecteur avec le modèle d'embeddings `all-MiniLM-L6-v2` (HuggingFace), puis indexé dans FAISS.
 3. Pour une question, le retriever sélectionne 5 passages avec la méthode MMR (Maximal Marginal Relevance), qui évite de renvoyer plusieurs passages quasi identiques.
-4. Les passages et l'historique de la conversation sont envoyés au modèle `llama-3.1-8b-instant` via l'API Groq, avec la consigne de ne répondre qu'à partir du contexte fourni.
+4. Les passages et l'historique de la conversation sont envoyés au modèle `openai/gpt-oss-120b` via l'API Groq, avec la consigne de ne répondre qu'à partir du contexte fourni.
 5. La réponse s'affiche au fur et à mesure (streaming), suivie des sources utilisées.
 
 Le PDF est identifié par un hash MD5 : si le même fichier est chargé à nouveau, l'index n'est pas recalculé.
@@ -54,4 +54,4 @@ Les paramètres (modèle, taille des morceaux, nombre de passages récupérés) 
 
 ## Technologies
 
-Python, Streamlit, LangChain, FAISS, HuggingFace (sentence-transformers), Groq (Llama 3.1).
+Python, Streamlit, LangChain, FAISS, HuggingFace (sentence-transformers), Groq (GPT-OSS 120B).
