@@ -6,22 +6,21 @@ from rag.chain import stream_response
 
 
 # =========================
-# ⚙️ Config page
+# Config page
 # =========================
 st.set_page_config(
     page_title="RAG Chatbot",
-    page_icon="🤖",
     layout="wide",
 )
 
-st.title("🤖 RAG Chatbot")
+st.title("RAG Chatbot")
 st.caption("Pose des questions sur ton document PDF")
 
 # =========================
-# 📂 Sidebar - Upload PDF
+# Sidebar - Upload PDF
 # =========================
 with st.sidebar:
-    st.header("📂 Document")
+    st.header("Document")
     uploaded_file = st.file_uploader("Upload un PDF", type="pdf")
 
     if uploaded_file:
@@ -30,7 +29,7 @@ with st.sidebar:
 
         # Recharger le vectorstore uniquement si le PDF a changé
         if st.session_state.get("pdf_hash") != pdf_hash:
-            with st.spinner("⚙️ Indexation du document..."):
+            with st.spinner("Indexation du document..."):
                 chunks = load_and_split_pdf_from_bytes(file_bytes, uploaded_file.name)
                 db = build_vectorstore(chunks)
 
@@ -38,17 +37,17 @@ with st.sidebar:
                 st.session_state.db = db
                 st.session_state.messages = []  # reset historique sur nouveau doc
 
-            st.success(f"✅ {len(chunks)} chunks indexés")
+            st.success(f"{len(chunks)} chunks indexés")
 
-        st.info(f"📄 **{uploaded_file.name}**")
+        st.info(f"**{uploaded_file.name}**")
 
     # Reset conversation
-    if st.button("🗑️ Effacer la conversation"):
+    if st.button("Effacer la conversation", icon=":material/delete:"):
         st.session_state.messages = []
         st.rerun()
 
 # =========================
-# 💬 Zone de chat
+#  Zone de chat
 # =========================
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -59,12 +58,12 @@ for msg in st.session_state.messages:
         st.write(msg["content"])
 
 # =========================
-# ✍️ Input utilisateur
+# Input utilisateur
 # =========================
 if prompt := st.chat_input("Pose ta question sur le document..."):
 
     if "db" not in st.session_state:
-        st.warning("⚠️ Upload un PDF d'abord.")
+        st.warning("Upload un PDF d'abord.")
         st.stop()
 
     # Afficher message user
@@ -73,13 +72,13 @@ if prompt := st.chat_input("Pose ta question sur le document..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     # =========================
-    # 🔎 Retrieval
+    # Retrieval
     # =========================
     retriever = get_retriever(st.session_state.db)
     retrieved_docs = retriever.invoke(prompt)  # variable distincte de 'docs' du loader
 
     # =========================
-    # ⚡ Réponse streamée
+    #  Réponse streamée
     # =========================
     with st.chat_message("assistant"):
         response = st.write_stream(
@@ -91,7 +90,7 @@ if prompt := st.chat_input("Pose ta question sur le document..."):
         )
 
         # Sources
-        with st.expander("📚 Sources utilisées"):
+        with st.expander("Sources utilisées", icon=":material/menu_book:"):
             for i, doc in enumerate(retrieved_docs):
                 page = doc.metadata.get("page", "?")
                 st.markdown(f"**Source {i+1} — Page {page}**")

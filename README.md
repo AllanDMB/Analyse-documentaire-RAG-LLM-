@@ -1,100 +1,57 @@
-# 🤖 RAG Chatbot
+# Assistant d'analyse documentaire (RAG)
 
-Un chatbot RAG (Retrieval-Augmented Generation) permettant de poser des questions sur n'importe quel document PDF.
+Ce projet est une application Streamlit qui permet de poser des questions sur un document PDF chargé au préalable. Les réponses sont générées par un LLM à partir des passages du document les plus pertinents, et chaque réponse affiche les extraits utilisés avec leur numéro de page pour pouvoir la vérifier.
 
-## 🏗️ Architecture
+J'ai commencé ce projet pour comprendre en pratique comment fonctionne un pipeline RAG (Retrieval-Augmented Generation), de l'indexation d'un document à la génération de la réponse. Je continuerai de le faire évoluer. A terme je souhaite créer un agent de discussion léger et fiable pouvant être utilisé pour divers domaines.
+*
+
+## Fonctionnement
+
+1. Le PDF est lu page par page, puis découpé en morceaux d'environ 500 caractères (avec 50 caractères de chevauchement).
+2. Chaque morceau est transformé en vecteur avec le modèle d'embeddings `all-MiniLM-L6-v2` (HuggingFace), puis indexé dans FAISS.
+3. Pour une question, le retriever sélectionne 5 passages avec la méthode MMR (Maximal Marginal Relevance), qui évite de renvoyer plusieurs passages quasi identiques.
+4. Les passages et l'historique de la conversation sont envoyés au modèle `llama-3.1-8b-instant` via l'API Groq, avec la consigne de ne répondre qu'à partir du contexte fourni.
+5. La réponse s'affiche au fur et à mesure (streaming), suivie des sources utilisées.
+
+Le PDF est identifié par un hash MD5 : si le même fichier est chargé à nouveau, l'index n'est pas recalculé.
+
+## Structure du code
 
 ```
-rag-chatbot/
-├── app.py              # UI Streamlit (couche présentation uniquement)
-├── config.py           # Paramètres centralisés
-├── rag/
-│   ├── loader.py       # Chargement + chunking PDF
-│   ├── vectorstore.py  # FAISS + embeddings HuggingFace
-│   └── chain.py        # Prompt + LLM Groq + streaming
-├── .env.example
-├── requirements.txt
-└── README.md
+app.py              interface Streamlit
+config.py           paramètres (modèles, découpage, retriever)
+rag/loader.py       lecture et découpage du PDF
+rag/vectorstore.py  embeddings, index FAISS et retriever
+rag/chain.py        prompt, appel au LLM et streaming
 ```
 
-## ✨ Fonctionnalités
+## Lancer le projet en local
 
-- 📄 Upload de PDF avec détection de changement (pas de réindexation inutile)
-- 🔎 Retrieval **MMR** (Maximum Marginal Relevance) pour des résultats diversifiés
-- ⚡ **Streaming** de la réponse token par token
-- 💬 Mémoire de conversation avec `MessagesPlaceholder` LangChain
-- 📚 Sources affichées avec numéro de page
-- 🗑️ Reset de conversation en un clic
-
-## 🚀 Installation
-
-### 1. Cloner le repo
+Prérequis : Python 3.11 ou plus récent et une clé API Groq (gratuite sur https://console.groq.com).
 
 ```bash
-git clone https://github.com/ton-user/rag-chatbot.git
-cd rag-chatbot
-```
-
-### 2. Créer un environnement virtuel
-
-```bash
+git clone https://github.com/AllanDMB/Analyse-documentaire-RAG-LLM-.git
+cd Analyse-documentaire-RAG-LLM-
 python -m venv .venv
-source .venv/bin/activate   # Linux/macOS
-.venv\Scripts\activate      # Windows
-```
-
-### 3. Installer les dépendances
-
-```bash
+source .venv/bin/activate        # Windows : .venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-### 4. Configurer les variables d'environnement
-
-```bash
-cp .env.example .env
-# Édite .env et ajoute ta clé API Groq
-```
-
-Obtenir une clé Groq gratuitement : https://console.groq.com
-
-### 5. Lancer l'application
-
-```bash
+echo "GROQ_API_KEY=votre_cle" > .env
 streamlit run app.py
 ```
 
-## ⚙️ Configuration
+Les paramètres (modèle, taille des morceaux, nombre de passages récupérés) se modifient dans `config.py`.
 
-Tous les paramètres sont centralisés dans `config.py` :
+## Limites actuelles
 
-| Paramètre | Valeur par défaut | Description |
-|---|---|---|
-| `LLM_MODEL` | `llama-3.1-8b-instant` | Modèle Groq utilisé |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Modèle d'embeddings HuggingFace |
-| `CHUNK_SIZE` | `500` | Taille des chunks en tokens |
-| `CHUNK_OVERLAP` | `50` | Chevauchement entre chunks |
-| `RETRIEVER_K` | `5` | Nombre de chunks récupérés |
+- Un seul document à la fois, et uniquement des PDF contenant du texte (pas de PDF scannés).
+- Pas encore d'évaluation chiffrée de la qualité des réponses.
 
-## 🔧 Choix techniques
+## Pistes d'évolution
 
-### MMR vs Similarity Search
-Le retriever utilise **Maximum Marginal Relevance** (`search_type="mmr"`) plutôt qu'une simple similarité cosinus. Cela garantit des chunks à la fois **pertinents** ET **diversifiés**, évitant les redondances.
+- Prise en charge des fichiers Word (.docx) et de plusieurs documents à la fois.
+- Métadonnées sur les passages (document, section) pour filtrer la recherche.
+- Jeu de questions de test pour mesurer la qualité des réponses et des sources.
 
-### MessagesPlaceholder
-L'historique est géré via `MessagesPlaceholder` LangChain plutôt qu'une concaténation de strings, ce qui permet une gestion propre des rôles et une meilleure utilisation du contexte.
+## Technologies
 
-### Hash PDF
-Le PDF est hashé (MD5) à l'upload. Si le même fichier est uploadé deux fois, le vectorstore n'est **pas** recréé, ce qui évite un calcul inutile des embeddings.
-
-## 📦 Stack
-
-- [Streamlit](https://streamlit.io/) — UI
-- [LangChain](https://langchain.com/) — Orchestration RAG
-- [Groq](https://groq.com/) — LLM (Llama 3.1)
-- [FAISS](https://github.com/facebookresearch/faiss) — Vector store local
-- [HuggingFace](https://huggingface.co/) — Embeddings (all-MiniLM-L6-v2)
-
-## 📝 Licence
-
-MIT
+Python, Streamlit, LangChain, FAISS, HuggingFace (sentence-transformers), Groq (Llama 3.1).

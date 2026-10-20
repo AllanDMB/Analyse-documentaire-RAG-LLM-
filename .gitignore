@@ -1,1 +1,15 @@
+# Environnements virtuels
 env/
+.venv/
+venv/
+
+# Clés et secrets
+.env
+.streamlit/secrets.toml
+
+# Fichiers générés par Python
+__pycache__/
+*.pyc
+
+# Divers
+.DS_Store
